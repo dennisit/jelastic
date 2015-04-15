@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <description>Elastic客户端</description>
+
+    <bean id="elasticClient" class="com.plugin.elastic.search.ElasticFactoryBean">
+        <property name="clusterName" value="plus_elastic" />
+        <property name="autoCrateIndex" value="false" />
+        <property name="discoveryType" value="zen" />
+        <property name="discoveryZenMinMasterNodes" value="1" />
+        <property name="discoveryZenPingTimeout" value="200" />
+        <property name="discoveryInitialStateTimeout" value="500" />
+        <property name="gatewayType" value="local" />
+        <property name="indexNumberOfShards" value="1" />
+        <property name="clusterRoutingSchedule" value="50" />
+        <property name="serverAddress" value="127.0.0.1:9300" />
+        <!--
+           cluster config
+           <property name="serverAddress" value="192.168.154.97:9300,192.168.154.98:9300" />
+        -->
+    </bean>
+
+</beans>

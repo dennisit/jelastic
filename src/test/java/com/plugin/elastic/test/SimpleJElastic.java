@@ -1,99 +1,50 @@
-# Jelastic
+//--------------------------------------------------------------------------
+//	Copyright (c) 2010-2020, En.dennisit or Cn.苏若年
+//  All rights reserved.
+//
+//	Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are
+//  met:
+//
+//	Redistributions of source code must retain the above copyright notice,
+//  this list of conditions and the following disclaimer.
+//	Redistributions in binary form must reproduce the above copyright
+//  notice, this list of conditions and the following disclaimer in the
+//  documentation and/or other materials provided with the distribution.
+//	Neither the name of the dennisit nor the names of its contributors
+//  may be used to endorse or promote products derived from this software
+//  without specific prior written permission.
+//  Author: dennisit@163.com | dobby | 苏若年
+//--------------------------------------------------------------------------
+package com.plugin.elastic.test;
 
-[实例化JElastic客户端组件]
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans
-	   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+import com.google.gson.Gson;
+import com.plugin.elastic.search.jelastic.JElasticRepository;
+import com.plugin.elastic.test.bean.VModel;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-    <description>Elastic客户端</description>
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
-    <bean id="elasticClient" class="com.plugin.elastic.search.ElasticFactoryBean">
-        <property name="clusterName" value="plus_elastic" />
-        <property name="autoCrateIndex" value="false" />
-        <property name="discoveryType" value="zen" />
-        <property name="discoveryZenMinMasterNodes" value="1" />
-        <property name="discoveryZenPingTimeout" value="200" />
-        <property name="discoveryInitialStateTimeout" value="500" />
-        <property name="gatewayType" value="local" />
-        <property name="indexNumberOfShards" value="1" />
-        <property name="clusterRoutingSchedule" value="50" />
-        <property name="serverAddress" value="127.0.0.1:9300" />
-        <!--集群配置方式
-            <property name="serverAddress" value="192.168.154.138:9300,192.168.154.139:9300" />
-        -->
-    </bean>
-
-</beans>
-
-[测试Model]
-public class VModel implements Serializable {
-
-    @JElasticId
-    private String id;
-
-    @JElasticColumn
-    private String pin;
-
-    private String desction;
-
-    @JElasticColumn(instore = false,analyzer = JEAnalyzer.not_analyzed)
-    private String keyword;
-
-    @JElasticColumn(instore = true)
-    private Date created;
-
-
-    public VModel() {
-    }
-
-    public VModel(String id, String pin, String desction, String keyword,Date date) {
-        this.id = id;
-        this.pin = pin;
-        this.desction = desction;
-        this.keyword = keyword;
-        this.created = date;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setPin(String pin) {
-        this.pin = pin;
-    }
-
-    public String getDesction() {
-        return desction;
-    }
-
-    public void setDesction(String desction) {
-        this.desction = desction;
-    }
-
-    public String getKeyword() {
-        return keyword;
-    }
-
-    public void setKeyword(String keyword) {
-        this.keyword = keyword;
-    }
-
-    public Date getCreated() {
-        return created;
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-}
-说明:
-    @JElasticId 定义存储在ES中的数据的documentId 值, 对应es的"_id"
-    @JElasticColumn(instore = false,analyzer = JEAnalyzer.not_analyzed) 定义es mapping规则,索引写操作时会根据注解映射索引存储的mapping
-
-[测试用例]
-public class TestElastic {
+/**
+ * Description:
+ * @author dennisit@163.com
+ * @version 1.0
+ */
+public class SimpleJElastic {
 
 
     ApplicationContext context = new ClassPathXmlApplicationContext("spring-bean-elastic.xml");
@@ -106,7 +57,7 @@ public class TestElastic {
     public void init(){
         transportClient = (TransportClient) context.getBean("elasticClient");
         if(null != transportClient ){
-           printf("init Elastic client finish!");
+            printf("init Elastic client finish!");
         }
         jElasticRepository = new JElasticRepository(transportClient);
         if(null != jElasticRepository ){
@@ -155,8 +106,8 @@ public class TestElastic {
             String json = hit.getSourceAsString();
             //将json串值转换成对应的实体对象
             VModel vmodel = new ObjectMapper().readValue(json, VModel.class);
-            vmodel.setDesction(jElasticRepository.getHighlightFields(hit,"desction"));
-            vmodel.setKeyword(jElasticRepository.getHighlightFields(hit,"keyword"));
+            vmodel.setDesction(jElasticRepository.getHighlightFields(hit, "desction"));
+            vmodel.setKeyword(jElasticRepository.getHighlightFields(hit, "keyword"));
             searhVm.add(vmodel);
         }
         printf("[高亮]结果总数" + searhVm.size());
@@ -228,28 +179,28 @@ public class TestElastic {
 
     /**
      {
-     "test_index": {
-         "properties": {
-             "id": {
+         "test_index": {
+             "properties": {
+                 "id": {
                  "type": "string",
                  "store": "yes"
-             },
-             "pin": {
-                 "type": "string",
-                 "store": "yes",
-                 "index": "analyzed"
-             },
-             "keyword": {
-                 "type": "string",
-                 "index": "analyzed"
-             },
-             "created": {
-                 "type": "date",
-                 "store": "yes",
-                 "index": "analyzed"
-             }
+                 },
+                 "pin": {
+                     "type": "string",
+                     "store": "yes",
+                     "index": "analyzed"
+                 },
+                 "keyword": {
+                     "type": "string",
+                     "index": "analyzed"
+                 },
+                 "created": {
+                     "type": "date",
+                     "store": "yes",
+                     "index": "analyzed"
+                 }
+            }
          }
-     }
      }
      */
 
@@ -266,11 +217,10 @@ public class TestElastic {
 
     @Test
     public void delete(){
-        printf(JSONUtils.toJSONString(jElasticRepository.delete("test_index","testName","X7upWFSYSPencBiLMZRFfw")));
+        printf(new Gson().toJson(jElasticRepository.delete("test_index", "testName", "X7upWFSYSPencBiLMZRFfw")));
     }
 
     public void printf(String text){
         System.out.println("[TEST]" + text);
     }
 }
-
